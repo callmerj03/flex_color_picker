@@ -56,13 +56,17 @@ const int _maxRecentColors = 20;
 @immutable
 class ColorPicker extends StatefulWidget {
   /// Default constructor for the color picker.
-  const ColorPicker({
+  ColorPicker({
     Key? key,
     // Core properties, set color and change callbacks.
     this.color = Colors.blue,
+    this.selectedColor = Colors.blue,
     required this.onColorChanged,
     this.onColorChangeStart,
     this.onColorChangeEnd,
+    this.buttonText1 = "",
+    this.buttonText2 = "",
+    this.onColorAdd,
     // Color picker types shown and used by the color picker.
     this.pickersEnabled = const <ColorPickerType, bool>{
       ColorPickerType.both: false,
@@ -117,8 +121,7 @@ class ColorPicker extends StatefulWidget {
     @Deprecated('This property is deprecated and no longer has any function. '
         'It was removed in v2.0.0. To modify the copy icon on the color code '
         'entry field, define the `ColorPickerCopyPasteBehavior(copyIcon: '
-        'myIcon)` and provide it via the `copyPasteBehavior` property.')
-        this.colorCodeIcon,
+        'myIcon)` and provide it via the `copyPasteBehavior` property.') this.colorCodeIcon,
     this.colorCodePrefixStyle,
     this.colorCodeReadOnly = false,
     this.showColorValue = false,
@@ -143,34 +146,35 @@ class ColorPicker extends StatefulWidget {
     // Custom color swatches and name map for the custom color swatches.
     this.customColorSwatchesAndNames = const <ColorSwatch<Object>, String>{},
     //
-  })  : assert(columnSpacing >= 0 && columnSpacing <= 300,
-            'The picker item column spacing must be from 0 to max 300 dp.'),
+  })
+      : assert(columnSpacing >= 0 && columnSpacing <= 300,
+  'The picker item column spacing must be from 0 to max 300 dp.'),
         assert(spacing >= 0 && spacing <= 50,
-            'The picker item spacing must be from 0 to max 50 dp.'),
+        'The picker item spacing must be from 0 to max 50 dp.'),
         assert(runSpacing >= 0 && runSpacing <= 50,
-            'The picker item runSpacing must be from 0 to max 50 dp.'),
+        'The picker item runSpacing must be from 0 to max 50 dp.'),
         assert(elevation >= 0, 'The picker item elevation must be >= 0 dp.'),
         assert(width >= 15 && width <= 150,
-            'The pick item width must be from 15 to max 150 dp.'),
+        'The pick item width must be from 15 to max 150 dp.'),
         assert(height >= 15 && height <= 150,
-            'The pick item height must be from 15 to max 150 dp.'),
+        'The pick item height must be from 15 to max 150 dp.'),
         assert(
-            borderRadius == null || (borderRadius >= 0 && borderRadius <= 50),
-            'The pick item borderRadius must be null or from 0 to max 50 dp.'),
+        borderRadius == null || (borderRadius >= 0 && borderRadius <= 50),
+        'The pick item borderRadius must be null or from 0 to max 50 dp.'),
         assert(opacityTrackWidth == null || opacityTrackWidth >= 150,
-            'The opacity slider track width must be null or >= 150.'),
+        'The opacity slider track width must be null or >= 150.'),
         assert(opacityTrackHeight >= 8 && opacityTrackHeight <= 50,
-            'The opacity slider track height must be from 8 to max 50 dp.'),
+        'The opacity slider track height must be from 8 to max 50 dp.'),
         assert(opacityThumbRadius >= 12 && opacityThumbRadius <= 30,
-            'The opacity slider thumb radius must be from 12 to max 30 dp.'),
+        'The opacity slider thumb radius must be from 12 to max 30 dp.'),
         assert(wheelDiameter >= 100 && wheelDiameter <= 500,
-            'The wheel diameter must be from 100 to max 500 dp.'),
+        'The wheel diameter must be from 100 to max 500 dp.'),
         assert(wheelWidth >= 4 && wheelWidth <= 50,
-            'The color wheel width must be from 4 to max 50 dp.'),
+        'The color wheel width must be from 4 to max 50 dp.'),
         assert(
-            maxRecentColors >= _minRecentColors &&
-                maxRecentColors <= _maxRecentColors,
-            'The maxRecentColors must be >= $_minRecentColors '
+        maxRecentColors >= _minRecentColors &&
+            maxRecentColors <= _maxRecentColors,
+        'The maxRecentColors must be >= $_minRecentColors '
             'and <= $_maxRecentColors.'),
         super(key: key);
 
@@ -186,6 +190,8 @@ class ColorPicker extends StatefulWidget {
   /// Changing which picker type is viewed does not trigger this callback, it
   /// is not triggered until a color in the viewed picker is selected.
   final ValueChanged<Color> onColorChanged;
+
+  final ValueChanged<Color>? onColorAdd;
 
   /// Optional [ValueChanged] callback. Called when user starts color selection
   /// with current color value.
@@ -217,6 +223,10 @@ class ColorPicker extends StatefulWidget {
   /// for the pairs you want to change from their default value. Any missing
   /// key-value pair in the provided map will keep their default value.
   final Map<ColorPickerType, bool> pickersEnabled;
+
+  String buttonText1 = " ";
+
+  String buttonText2 = " ";
 
   /// Set to true to allow selection of color swatch shades.
   ///
@@ -622,6 +632,8 @@ class ColorPicker extends StatefulWidget {
   /// English default label for the HSV wheel picker that can select any color.
   static const String _selectWheelAnyLabel = 'Wheel';
 
+  Color selectedColor;
+
   @override
   _ColorPickerState createState() => _ColorPickerState();
 
@@ -643,186 +655,186 @@ class ColorPicker extends StatefulWidget {
   /// The actual color selected in the dialog is handled via the `onChange`
   /// callbacks of the [ColorPicker] instance.
   Future<bool> showPickerDialog(
-    /// The dialog requires a BuildContext.
-    BuildContext context, {
 
-    /// Title of the color picker dialog, often omitted in favor of using a
-    /// [title] and/or [heading] already defined in the [ColorPicker].
-    Widget? title,
+      /// The dialog requires a BuildContext.
+      BuildContext context, {
 
-    /// Padding around the dialog title, if a title is used.
-    /// Defaults to `EdgeInsets.zero`, since the title is normally omitted
-    /// and provided via the `heading` property of the `ColorPicker` instead.
-    final EdgeInsetsGeometry titlePadding = EdgeInsets.zero,
+        /// Title of the color picker dialog, often omitted in favor of using a
+        /// [title] and/or [heading] already defined in the [ColorPicker].
+        Widget? title,
 
-    /// Style for the text in the [title] of this [AlertDialog].
-    ///
-    /// If null, [DialogTheme.titleTextStyle] is used. If that's null,
-    /// defaults to [TextTheme.headline6] of [ThemeData.textTheme].
-    final TextStyle? titleTextStyle,
+        /// Padding around the dialog title, if a title is used.
+        /// Defaults to `EdgeInsets.zero`, since the title is normally omitted
+        /// and provided via the `heading` property of the `ColorPicker` instead.
+        final EdgeInsetsGeometry titlePadding = EdgeInsets.zero,
 
-    /// Padding around the content in the dialog.
-    ///
-    /// Defaults to `EdgeInsets.zero`, as the content padding is expected to
-    /// be a part of the `ColorPicker`.
-    final EdgeInsetsGeometry contentPadding = EdgeInsets.zero,
+        /// Style for the text in the [title] of this [AlertDialog].
+        ///
+        /// If null, [DialogTheme.titleTextStyle] is used. If that's null,
+        /// defaults to [TextTheme.headline6] of [ThemeData.textTheme].
+        final TextStyle? titleTextStyle,
 
-    /// Padding around the Cancel and OK action buttons at the bottom of
-    /// the dialog.
-    ///
-    /// Typically used to provide padding to the button bar between the button
-    /// bar and the edges of the dialog.
-    ///
-    /// Defaults to `EdgeInsets.symmetric(horizontal: 16)`.
-    final EdgeInsetsGeometry actionsPadding =
+        /// Padding around the content in the dialog.
+        ///
+        /// Defaults to `EdgeInsets.zero`, as the content padding is expected to
+        /// be a part of the `ColorPicker`.
+        final EdgeInsetsGeometry contentPadding = EdgeInsets.zero,
+
+        /// Padding around the Cancel and OK action buttons at the bottom of
+        /// the dialog.
+        ///
+        /// Typically used to provide padding to the button bar between the button
+        /// bar and the edges of the dialog.
+        ///
+        /// Defaults to `EdgeInsets.symmetric(horizontal: 16)`.
+        final EdgeInsetsGeometry actionsPadding =
         const EdgeInsets.symmetric(horizontal: 16),
 
-    /// The padding that surrounds each bottom action button.
-    ///
-    /// This is different from [actionsPadding], which defines the padding
-    /// between the entire button bar and the edges of the dialog.
-    ///
-    /// Defaults to `EdgeInsets.all(16)`.
-    final EdgeInsetsGeometry buttonPadding = const EdgeInsets.all(16),
+        /// The padding that surrounds each bottom action button.
+        ///
+        /// This is different from [actionsPadding], which defines the padding
+        /// between the entire button bar and the edges of the dialog.
+        ///
+        /// Defaults to `EdgeInsets.all(16)`.
+        final EdgeInsetsGeometry buttonPadding = const EdgeInsets.all(16),
 
-    /// The background color of the surface of this Dialog.
-    ///
-    /// This sets the Material.color on this Dialog's Material.
-    /// If null, ThemeData.dialogBackgroundColor is used.
-    ///
-    /// NOTE: The ColorPicker is designed to fit on background color with
-    /// brightness that follow active theme mode. Putting e.g. white as
-    /// background in dark theme mode, will not produce usable results.
-    final Color? backgroundColor,
+        /// The background color of the surface of this Dialog.
+        ///
+        /// This sets the Material.color on this Dialog's Material.
+        /// If null, ThemeData.dialogBackgroundColor is used.
+        ///
+        /// NOTE: The ColorPicker is designed to fit on background color with
+        /// brightness that follow active theme mode. Putting e.g. white as
+        /// background in dark theme mode, will not produce usable results.
+        final Color? backgroundColor,
 
-    /// The z-coordinate of this Dialog.
-    ///
-    /// If null then DialogTheme.elevation is used, and if that's null then the
-    /// dialog's elevation is 24.0. The z-coordinate at which to place this
-    /// material relative to its parent.
-    ///
-    /// This controls the size of the shadow below the material and the opacity
-    /// of the elevation overlay color if it is applied. If this is non-zero,
-    /// the contents of the material are clipped, because the widget
-    /// conceptually defines an independent printed piece of material.
-    /// Changing this value will cause the shadow and the elevation
-    /// overlay to animate over Material.animationDuration.
-    ///
-    /// Defaults to 0.
-    final double? elevation,
+        /// The z-coordinate of this Dialog.
+        ///
+        /// If null then DialogTheme.elevation is used, and if that's null then the
+        /// dialog's elevation is 24.0. The z-coordinate at which to place this
+        /// material relative to its parent.
+        ///
+        /// This controls the size of the shadow below the material and the opacity
+        /// of the elevation overlay color if it is applied. If this is non-zero,
+        /// the contents of the material are clipped, because the widget
+        /// conceptually defines an independent printed piece of material.
+        /// Changing this value will cause the shadow and the elevation
+        /// overlay to animate over Material.animationDuration.
+        ///
+        /// Defaults to 0.
+        final double? elevation,
 
-    /// The semantic label of the dialog used by accessibility frameworks to
-    /// announce screen transitions when the dialog is opened and closed.
-    ///
-    /// In iOS, if this label is not provided, a semantic label will be inferred
-    /// from the [title] if it is not null.
-    ///
-    /// In Android, if this label is not provided, the dialog will use the
-    /// [MaterialLocalizations.alertDialogLabel] as its label.
-    ///
-    /// See also:
-    ///
-    ///  * [SemanticsConfiguration.namesRoute], for a description of how this
-    ///    value is used.
-    final String? semanticLabel,
+        /// The semantic label of the dialog used by accessibility frameworks to
+        /// announce screen transitions when the dialog is opened and closed.
+        ///
+        /// In iOS, if this label is not provided, a semantic label will be inferred
+        /// from the [title] if it is not null.
+        ///
+        /// In Android, if this label is not provided, the dialog will use the
+        /// [MaterialLocalizations.alertDialogLabel] as its label.
+        ///
+        /// See also:
+        ///
+        ///  * [SemanticsConfiguration.namesRoute], for a description of how this
+        ///    value is used.
+        final String? semanticLabel,
 
-    /// The amount of padding added to `MediaQueryData.viewInsets` on the
-    /// outside of the `ColorPicker` dialog.
-    ///
-    /// Defines the minimum space between the screen's edges and the dialog.
-    /// Defaults to `EdgeInsets.symmetric(horizontal: 40, vertical: 24)`.
-    final EdgeInsets insetPadding =
+        /// The amount of padding added to `MediaQueryData.viewInsets` on the
+        /// outside of the `ColorPicker` dialog.
+        ///
+        /// Defines the minimum space between the screen's edges and the dialog.
+        /// Defaults to `EdgeInsets.symmetric(horizontal: 40, vertical: 24)`.
+        final EdgeInsets insetPadding =
         const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
 
-    /// Controls how the contents of the dialog are clipped (or not) to the
-    /// given shape.
-    ///
-    /// See the enum `Clip` for details of all possible options and their
-    /// common use cases.
-    ///
-    /// Defaults to Clip.none, and must not be null.
-    final Clip clipBehavior = Clip.none,
+        /// Controls how the contents of the dialog are clipped (or not) to the
+        /// given shape.
+        ///
+        /// See the enum `Clip` for details of all possible options and their
+        /// common use cases.
+        ///
+        /// Defaults to Clip.none, and must not be null.
+        final Clip clipBehavior = Clip.none,
 
-    /// The shape of this dialog's border.
-    ///
-    /// Defines the dialog's Material.shape.
-    ///
-    /// The default shape is a RoundedRectangleBorder with a radius of 4.0.
-    final ShapeBorder? shape,
+        /// The shape of this dialog's border.
+        ///
+        /// Defines the dialog's Material.shape.
+        ///
+        /// The default shape is a RoundedRectangleBorder with a radius of 4.0.
+        final ShapeBorder? shape,
 
-    /// If true, the dialog can be closed by clicking outside it.
-    ///
-    /// Defaults to true.
-    bool barrierDismissible = true,
+        /// If true, the dialog can be closed by clicking outside it.
+        ///
+        /// Defaults to true.
+        bool barrierDismissible = true,
 
-    /// The background transparency color of the dialog barrier.
-    ///
-    /// Defaults to [Colors.black12] which is considerably lighter than the
-    /// standard [Colors.black54] and allows us to see the impact of selected
-    /// color on app behind the dialog. If this is not desired, set it back to
-    /// [Colors.black54] when you call [showPickerDialog], or make it even more
-    /// transparent.
-    ///
-    /// You can also make the barrier completely transparent.
-    Color barrierColor = Colors.black12,
+        /// The background transparency color of the dialog barrier.
+        ///
+        /// Defaults to [Colors.black12] which is considerably lighter than the
+        /// standard [Colors.black54] and allows us to see the impact of selected
+        /// color on app behind the dialog. If this is not desired, set it back to
+        /// [Colors.black54] when you call [showPickerDialog], or make it even more
+        /// transparent.
+        ///
+        /// You can also make the barrier completely transparent.
+        Color barrierColor = Colors.black12,
 
-    /// The `useSafeArea` argument is used to indicate if the dialog should only
-    /// display in 'safe' areas of the screen not used by the operating system
-    /// (see [SafeArea] for more details).
-    ///
-    /// Default to `true` by default, which means the dialog will not overlap
-    /// operating system areas. If it is set to `false` the dialog will only
-    /// be constrained by the screen size.
-    bool useSafeArea = true,
+        /// The `useSafeArea` argument is used to indicate if the dialog should only
+        /// display in 'safe' areas of the screen not used by the operating system
+        /// (see [SafeArea] for more details).
+        ///
+        /// Default to `true` by default, which means the dialog will not overlap
+        /// operating system areas. If it is set to `false` the dialog will only
+        /// be constrained by the screen size.
+        bool useSafeArea = true,
 
-    /// Usage of [useRootNavigator] here is deprecated.
-    ///
-    /// The [useRootNavigator] argument is now respected on all Navigator
-    /// [pop] functions used in the [ColorPicker] widget itself and by
-    /// built-in dialogs used by the [ColorPicker]. In order to support this,
-    /// the current [useRootNavigator] property in the
-    /// [ColorPicker.showPickerDialog] and in the function
-    /// [showColorPickerDialog] had to be deprecated.
-    ///
-    /// The property has moved to become a configuration option in
-    /// [ColorPickerActionButtons] class in order to make it accessible to
-    /// the Navigator pop functions both in the [ColorPicker] widget itself,
-    /// as well as by built-in dialogs.
-    ///
-    /// The default behavior has not been changed, the setting still defaults
-    /// to using dialogs that use the root navigator, but now the pop
-    /// functions work as intended.
-    ///
-    /// If you for some reason have used none root navigators for the built-in
-    /// dialogs in previous version, you need to set
-    /// `ColorPickerActionButtons(useRootNavigator: false)` in
-    /// `ColorPicker(actionButtons)` or `showColorPickerDialog(actionButtons)`.
-    @Deprecated(
-      'This property is no longer set here and has no function if assigned here. '
-      'From version 2.1.0 it must be defined via same property in configuration '
-      'class ColorPickerActionButtons(useRootNavigator).',
-    )
-        bool useRootNavigator = true,
+        /// Usage of [useRootNavigator] here is deprecated.
+        ///
+        /// The [useRootNavigator] argument is now respected on all Navigator
+        /// [pop] functions used in the [ColorPicker] widget itself and by
+        /// built-in dialogs used by the [ColorPicker]. In order to support this,
+        /// the current [useRootNavigator] property in the
+        /// [ColorPicker.showPickerDialog] and in the function
+        /// [showColorPickerDialog] had to be deprecated.
+        ///
+        /// The property has moved to become a configuration option in
+        /// [ColorPickerActionButtons] class in order to make it accessible to
+        /// the Navigator pop functions both in the [ColorPicker] widget itself,
+        /// as well as by built-in dialogs.
+        ///
+        /// The default behavior has not been changed, the setting still defaults
+        /// to using dialogs that use the root navigator, but now the pop
+        /// functions work as intended.
+        ///
+        /// If you for some reason have used none root navigators for the built-in
+        /// dialogs in previous version, you need to set
+        /// `ColorPickerActionButtons(useRootNavigator: false)` in
+        /// `ColorPicker(actionButtons)` or `showColorPickerDialog(actionButtons)`.
+        @Deprecated(
+          'This property is no longer set here and has no function if assigned here. '
+              'From version 2.1.0 it must be defined via same property in configuration '
+              'class ColorPickerActionButtons(useRootNavigator).',
+        ) bool useRootNavigator = true,
 
-    /// The `routeSettings` argument is passed to [showGeneralDialog],
-    /// see [RouteSettings] for details.
-    RouteSettings? routeSettings,
+        /// The `routeSettings` argument is passed to [showGeneralDialog],
+        /// see [RouteSettings] for details.
+        RouteSettings? routeSettings,
 
-    /// You can provide BoxConstraints to constrain the size of the dialog.
-    ///
-    /// You might want to do this at least for the height, otherwise
-    /// the dialog height might jump up and down jarringly if its size changes
-    /// when user changes the picker type with the selector.¨
-    ///
-    /// Normally you would not change the picker's content element sizes after
-    /// you have determined what works in your implementation. You can usually
-    /// figure out a good dialog box size that works well for your use case,
-    /// for all active pickers, instead of allowing the color picker dialog
-    /// to auto size itself, which it will do if no constraints are defined.
-    BoxConstraints? constraints,
-  }) async {
+        /// You can provide BoxConstraints to constrain the size of the dialog.
+        ///
+        /// You might want to do this at least for the height, otherwise
+        /// the dialog height might jump up and down jarringly if its size changes
+        /// when user changes the picker type with the selector.¨
+        ///
+        /// Normally you would not change the picker's content element sizes after
+        /// you have determined what works in your implementation. You can usually
+        /// figure out a good dialog box size that works well for your use case,
+        /// for all active pickers, instead of allowing the color picker dialog
+        /// to auto size itself, which it will do if no constraints are defined.
+        BoxConstraints? constraints,
+      }) async {
     assert(debugCheckHasMaterialLocalizations(context),
-        'A context with Material localizations is required');
+    'A context with Material localizations is required');
     // Get the Material localizations.
     final MaterialLocalizations translate = MaterialLocalizations.of(context);
 
@@ -936,19 +948,43 @@ class ColorPicker extends StatefulWidget {
             content: constraints == null
                 ? this
                 : ConstrainedBox(
-                    constraints: constraints,
-                    child: this,
-                  ),
+              constraints: constraints,
+              child: this,
+            ),
             contentPadding: contentPadding,
             actions: actionButtons.dialogActionButtons
                 ? <Widget>[
-                    _cancelButton,
-                    _okButton,
-                  ]
+              GestureDetector(
+                  onTap: () {
+                    onColorAdd!(selectedColor);
+                  },
+                  child: Text(
+                    "${buttonText1}",
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
+                  )),
+
+              GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    "${buttonText2}",
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
+                  )),
+
+              // _cancelButton,
+              // _okButton,
+            ]
                 : null,
             actionsPadding: actionsPadding,
             buttonPadding: buttonPadding,
-            backgroundColor: backgroundColor,
+            backgroundColor: Color(0xFF464646),
             elevation: elevation,
             semanticLabel: semanticLabel,
             insetPadding: insetPadding,
@@ -968,8 +1004,10 @@ class ColorPicker extends StatefulWidget {
 class _ColorPickerState extends State<ColorPicker> {
   // Focus node the entire color picker.
   late FocusNode _focusNode;
+
   // Focus node of the picker selector.
   late FocusNode _pickerFocusNode;
+
   // Focus node of the opacity slider.
   late FocusNode _opacityFocusNode;
 
@@ -985,7 +1023,6 @@ class _ColorPickerState extends State<ColorPicker> {
   late ColorPickerType _activePicker;
 
   // Current selected color
-  late Color _selectedColor;
 
   // Current color opacity value
   late double _opacity;
@@ -1040,8 +1077,8 @@ class _ColorPickerState extends State<ColorPicker> {
     super.initState();
     // Set selected color to the widget constructor provided start color,
     // if opacity is not enabled, override alpha to fully opaque.
-    _selectedColor =
-        widget.enableOpacity ? widget.color : widget.color.withAlpha(0xFF);
+    widget.selectedColor =
+    widget.enableOpacity ? widget.color : widget.color.withAlpha(0xFF);
     // Get current opacity of passed in color, if opacity is enabled.
     _opacity = widget.enableOpacity ? widget.color.opacity : 1;
     // Picker labels, use english fallbacks if none provided.
@@ -1049,8 +1086,8 @@ class _ColorPickerState extends State<ColorPicker> {
       ColorPickerType.both: widget.pickerTypeLabels[ColorPickerType.both] ??
           ColorPicker._selectBothLabel,
       ColorPickerType.primary:
-          widget.pickerTypeLabels[ColorPickerType.primary] ??
-              ColorPicker._selectPrimaryLabel,
+      widget.pickerTypeLabels[ColorPickerType.primary] ??
+          ColorPicker._selectPrimaryLabel,
       ColorPickerType.accent: widget.pickerTypeLabels[ColorPickerType.accent] ??
           ColorPicker._selectAccentLabel,
       ColorPickerType.bw: widget.pickerTypeLabels[ColorPickerType.bw] ??
@@ -1069,24 +1106,24 @@ class _ColorPickerState extends State<ColorPicker> {
       ColorPickerType.custom: widget.customColorSwatchesAndNames.keys.toList(),
       ColorPickerType.wheel: <ColorSwatch<Object>>[
         // Make a swatch of the selected color in the wheel.
-        ColorTools.primarySwatch(_selectedColor.withAlpha(0xFF))
+        ColorTools.primarySwatch(widget.selectedColor.withAlpha(0xFF))
       ],
     };
     // Enabled color pickers, with defaults if not specified.
     _pickers = <ColorPickerType, bool>{
       ColorPickerType.both:
-          widget.pickersEnabled[ColorPickerType.both] ?? false,
+      widget.pickersEnabled[ColorPickerType.both] ?? false,
       ColorPickerType.primary:
-          widget.pickersEnabled[ColorPickerType.primary] ?? true,
+      widget.pickersEnabled[ColorPickerType.primary] ?? true,
       ColorPickerType.accent:
-          widget.pickersEnabled[ColorPickerType.accent] ?? true,
+      widget.pickersEnabled[ColorPickerType.accent] ?? true,
       ColorPickerType.bw: widget.pickersEnabled[ColorPickerType.bw] ?? false,
       ColorPickerType.custom:
-          // Custom picker is always disabled if no custom swatches are given.
-          (widget.pickersEnabled[ColorPickerType.custom] ?? false) &&
-              widget.customColorSwatchesAndNames.isNotEmpty,
+      // Custom picker is always disabled if no custom swatches are given.
+      (widget.pickersEnabled[ColorPickerType.custom] ?? false) &&
+          widget.customColorSwatchesAndNames.isNotEmpty,
       ColorPickerType.wheel:
-          widget.pickersEnabled[ColorPickerType.wheel] ?? false,
+      widget.pickersEnabled[ColorPickerType.wheel] ?? false,
     };
     // Define used focus nodes.
     _focusNode = FocusNode();
@@ -1116,8 +1153,8 @@ class _ColorPickerState extends State<ColorPicker> {
     if (widget.enableOpacity != oldWidget.enableOpacity) {
       // debugPrint('didUpdateWidget enableOpacity = '
       //     '${widget.enableOpacity == oldWidget.enableOpacity}');
-      _selectedColor =
-          widget.enableOpacity ? widget.color : widget.color.withAlpha(0xFF);
+      widget.selectedColor =
+      widget.enableOpacity ? widget.color : widget.color.withAlpha(0xFF);
       _opacity = widget.enableOpacity ? widget.color.opacity : 1;
     }
 
@@ -1129,16 +1166,16 @@ class _ColorPickerState extends State<ColorPicker> {
         ColorPickerType.both: widget.pickerTypeLabels[ColorPickerType.both] ??
             ColorPicker._selectBothLabel,
         ColorPickerType.primary:
-            widget.pickerTypeLabels[ColorPickerType.primary] ??
-                ColorPicker._selectPrimaryLabel,
+        widget.pickerTypeLabels[ColorPickerType.primary] ??
+            ColorPicker._selectPrimaryLabel,
         ColorPickerType.accent:
-            widget.pickerTypeLabels[ColorPickerType.accent] ??
-                ColorPicker._selectAccentLabel,
+        widget.pickerTypeLabels[ColorPickerType.accent] ??
+            ColorPicker._selectAccentLabel,
         ColorPickerType.bw: widget.pickerTypeLabels[ColorPickerType.bw] ??
             ColorPicker._selectBlackWhiteLabel,
         ColorPickerType.custom:
-            widget.pickerTypeLabels[ColorPickerType.custom] ??
-                ColorPicker._selectCustomLabel,
+        widget.pickerTypeLabels[ColorPickerType.custom] ??
+            ColorPicker._selectCustomLabel,
         ColorPickerType.wheel: widget.pickerTypeLabels[ColorPickerType.wheel] ??
             ColorPicker._selectWheelAnyLabel,
       };
@@ -1147,7 +1184,7 @@ class _ColorPickerState extends State<ColorPicker> {
     // Pickers customColorSwatchesAndNames map changed, or pickersEnabled map
     // changed, they depend on each other, so we always update state of both.
     if (widget.customColorSwatchesAndNames.toString() !=
-            oldWidget.customColorSwatchesAndNames.toString() ||
+        oldWidget.customColorSwatchesAndNames.toString() ||
         !mapEquals(widget.pickersEnabled, oldWidget.pickersEnabled)) {
       // TODO: Investigate the mapEquals issue.
       // In above un-equality check, the mapEquals, or with map != operator,
@@ -1177,7 +1214,7 @@ class _ColorPickerState extends State<ColorPicker> {
             .toList(), // Use empty map if no custom swatch given.
         ColorPickerType.wheel: <ColorSwatch<Object>>[
           // Make a swatch of the selected color in the wheel.
-          ColorTools.primarySwatch(_selectedColor.withAlpha(0xFF))
+          ColorTools.primarySwatch(widget.selectedColor.withAlpha(0xFF))
         ],
       };
       // Update enabled color pickers, with defaults if none given, depends
@@ -1185,18 +1222,18 @@ class _ColorPickerState extends State<ColorPicker> {
       // it changes, not just the enabled pickers.
       _pickers = <ColorPickerType, bool>{
         ColorPickerType.both:
-            widget.pickersEnabled[ColorPickerType.both] ?? false,
+        widget.pickersEnabled[ColorPickerType.both] ?? false,
         ColorPickerType.primary:
-            widget.pickersEnabled[ColorPickerType.primary] ?? true,
+        widget.pickersEnabled[ColorPickerType.primary] ?? true,
         ColorPickerType.accent:
-            widget.pickersEnabled[ColorPickerType.accent] ?? true,
+        widget.pickersEnabled[ColorPickerType.accent] ?? true,
         ColorPickerType.bw: widget.pickersEnabled[ColorPickerType.bw] ?? false,
         ColorPickerType.custom:
-            // Custom picker is always disabled if no custom swatches are given.
-            (widget.pickersEnabled[ColorPickerType.custom] ?? false) &&
-                widget.customColorSwatchesAndNames.isNotEmpty,
+        // Custom picker is always disabled if no custom swatches are given.
+        (widget.pickersEnabled[ColorPickerType.custom] ?? false) &&
+            widget.customColorSwatchesAndNames.isNotEmpty,
         ColorPickerType.wheel:
-            widget.pickersEnabled[ColorPickerType.wheel] ?? false,
+        widget.pickersEnabled[ColorPickerType.wheel] ?? false,
       };
       // debugPrint('${widget.customColorSwatchesAndNames}');
       // debugPrint('${oldWidget.customColorSwatchesAndNames}');
@@ -1214,14 +1251,14 @@ class _ColorPickerState extends State<ColorPicker> {
     }
     // The widget color was updated externally since it differs from internally
     // kept state, we should update the widget to new color and find picker.
-    if (widget.color != _selectedColor) {
+    if (widget.color != widget.selectedColor) {
       // debugPrint('didUpdateWidget external color update!');
-      _selectedColor =
-          widget.enableOpacity ? widget.color : widget.color.withAlpha(0xFF);
+      widget.selectedColor =
+      widget.enableOpacity ? widget.color : widget.color.withAlpha(0xFF);
       _opacity = widget.enableOpacity ? widget.color.opacity : 1;
       // Need to make a swatch too be able to find it on wheel, if it is there.
       _typeToSwatchMap[ColorPickerType.wheel] = <ColorSwatch<Object>>[
-        ColorTools.createPrimarySwatch(_selectedColor.withAlpha(0xFF)),
+        ColorTools.createPrimarySwatch(widget.selectedColor.withAlpha(0xFF)),
       ];
       // Wheel and edit needs to update.
       _wheelShouldUpdate = true;
@@ -1256,11 +1293,11 @@ class _ColorPickerState extends State<ColorPicker> {
         _pickers.values.fold<int>(0, (int t, bool e) => t + (e ? 1 : 0)) > 1;
 
     // If we have a picker selector, we get the best one of the enabled ones,
-    // to show the current _selectedColor.
+    // to show the current widget._selectedColor.
     if (_usePickerSelector) {
       _activePicker = findColorInSelector(
         // Disregard any alpha on selected color to find its color value only.
-        color: _selectedColor.withAlpha(0xFF),
+        color: widget.selectedColor.withAlpha(0xFF),
         typeToSwatchMap: _typeToSwatchMap,
         pickersEnabled: _pickers,
         lookInShades: widget.enableShadesSelection,
@@ -1302,14 +1339,14 @@ class _ColorPickerState extends State<ColorPicker> {
   // Update shades swatch to the correct swatch for the selected color.
   void _updateActiveSwatch() {
     // The typical case is that we have a normal swatch where we need to
-    // find the swatch that contains the _selectedColor.
+    // find the swatch that contains the widget._selectedColor.
     if (_activePicker != ColorPickerType.wheel) {
       // Get list of color swatches from the map for the active picker.
       _activeColorSwatchList = _typeToSwatchMap[_activePicker]!;
       // Find the swatch that selected color belongs to from the swatches in
       // the active picker and set this swatch as _activeSwatch.
       _activeSwatch = findColorSwatch(
-        _selectedColor.withAlpha(0xFF),
+        widget.selectedColor.withAlpha(0xFF),
         _activeColorSwatchList,
         widget.includeIndex850,
       ) as ColorSwatch<Object>?;
@@ -1318,18 +1355,21 @@ class _ColorPickerState extends State<ColorPicker> {
       // If the selected color does not belong to any pre-defined color swatch,
       // then we compute a color swatch for it.
     } else {
-      if (ColorTools.isAccentColor(_selectedColor.withAlpha(0xFF))) {
-        _activeSwatch = ColorTools.accentSwatch(_selectedColor.withAlpha(0xFF));
-      } else if (ColorTools.isPrimaryColor(_selectedColor.withAlpha(0xFF))) {
+      if (ColorTools.isAccentColor(widget.selectedColor.withAlpha(0xFF))) {
         _activeSwatch =
-            ColorTools.primarySwatch(_selectedColor.withAlpha(0xFF));
+            ColorTools.accentSwatch(widget.selectedColor.withAlpha(0xFF));
+      } else if (ColorTools.isPrimaryColor(
+          widget.selectedColor.withAlpha(0xFF))) {
+        _activeSwatch =
+            ColorTools.primarySwatch(widget.selectedColor.withAlpha(0xFF));
       } else if (ColorTools.isBlackAndWhiteColor(
-          _selectedColor.withAlpha(0xFF))) {
-        _activeSwatch =
-            ColorTools.blackAndWhiteSwatch(_selectedColor.withAlpha(0xFF));
+          widget.selectedColor.withAlpha(0xFF))) {
+        _activeSwatch = ColorTools.blackAndWhiteSwatch(
+            widget.selectedColor.withAlpha(0xFF));
       } else {
         _activeSwatch = ColorTools.customSwatch(
-            _selectedColor.withAlpha(0xFF), widget.customColorSwatchesAndNames);
+            widget.selectedColor.withAlpha(0xFF),
+            widget.customColorSwatchesAndNames);
       }
     }
     // We did not find the selected color in any active swatch list, in that
@@ -1355,15 +1395,24 @@ class _ColorPickerState extends State<ColorPicker> {
     // The effective used text style, if null was passed in we assign defaults.
     final TextStyle effectiveMaterialNameStyle =
         (widget.materialNameTextStyle ??
-                Theme.of(context).textTheme.bodyText2) ??
+            Theme
+                .of(context)
+                .textTheme
+                .bodyText2) ??
             const TextStyle();
     final TextStyle effectiveGenericNameStyle =
-        (widget.colorNameTextStyle ?? Theme.of(context).textTheme.bodyText2) ??
+        (widget.colorNameTextStyle ?? Theme
+            .of(context)
+            .textTheme
+            .bodyText2) ??
             const TextStyle();
 
     // Set the default integer code value text style to bodyText2 if not given.
     final TextStyle effectiveCodeStyle =
-        (widget.colorCodeTextStyle ?? Theme.of(context).textTheme.bodyText2) ??
+        (widget.colorCodeTextStyle ?? Theme
+            .of(context)
+            .textTheme
+            .bodyText2) ??
             const TextStyle();
 
     // TODO: Remove these comments
@@ -1399,9 +1448,9 @@ class _ColorPickerState extends State<ColorPicker> {
             useLongPress: widget.copyPasteBehavior.longPressMenu,
             useSecondaryTapDown: widget.copyPasteBehavior.secondaryMenu,
             useSecondaryOnDesktopLongOnDevice:
-                widget.copyPasteBehavior.secondaryOnDesktopLongOnDevice,
+            widget.copyPasteBehavior.secondaryOnDesktopLongOnDevice,
             useSecondaryOnDesktopLongOnDeviceAndWeb:
-                widget.copyPasteBehavior.secondaryOnDesktopLongOnDeviceAndWeb,
+            widget.copyPasteBehavior.secondaryOnDesktopLongOnDeviceAndWeb,
             onSelected: (CopyPasteCommands? value) {
               if (value == CopyPasteCommands.copy) _setClipboard();
               if (value == CopyPasteCommands.paste) _getClipboard();
@@ -1413,7 +1462,7 @@ class _ColorPickerState extends State<ColorPicker> {
               if (_onWheel) {
                 // But only if there is call back for it.
                 if (widget.onColorChangeEnd != null) {
-                  widget.onColorChangeEnd!(_selectedColor);
+                  widget.onColorChangeEnd!(widget.selectedColor);
                 }
                 // We set onWheel to false as well, as we are no longer on
                 // the wheel and we handled the event.
@@ -1450,37 +1499,37 @@ class _ColorPickerState extends State<ColorPicker> {
                         : null,
                     onOk: widget.actionButtons.okButton
                         ? () {
-                            // OK was pressed, we pop and return TRUE.
-                            // In case this was not used in a dialog the
-                            // canPop will at least avoid a crash, but may
-                            // still do the wrong thing.
-                            if (Navigator.of(context,
-                                    rootNavigator:
-                                        widget.actionButtons.useRootNavigator)
-                                .canPop()) {
-                              Navigator.of(context,
-                                      rootNavigator:
-                                          widget.actionButtons.useRootNavigator)
-                                  .pop(true);
-                            }
-                          }
+                      // OK was pressed, we pop and return TRUE.
+                      // In case this was not used in a dialog the
+                      // canPop will at least avoid a crash, but may
+                      // still do the wrong thing.
+                      if (Navigator.of(context,
+                          rootNavigator:
+                          widget.actionButtons.useRootNavigator)
+                          .canPop()) {
+                        Navigator.of(context,
+                            rootNavigator:
+                            widget.actionButtons.useRootNavigator)
+                            .pop(true);
+                      }
+                    }
                         : null,
                     onClose: widget.actionButtons.closeButton
                         ? () {
-                            // Cancel was pressed, we pop and return FALSE.
-                            // In case this was not used in a dialog the
-                            // canPop will at least avoid a crash, but may
-                            // still do the wrong thing.
-                            if (Navigator.of(context,
-                                    rootNavigator:
-                                        widget.actionButtons.useRootNavigator)
-                                .canPop()) {
-                              Navigator.of(context,
-                                      rootNavigator:
-                                          widget.actionButtons.useRootNavigator)
-                                  .pop(false);
-                            }
-                          }
+                      // Cancel was pressed, we pop and return FALSE.
+                      // In case this was not used in a dialog the
+                      // canPop will at least avoid a crash, but may
+                      // still do the wrong thing.
+                      if (Navigator.of(context,
+                          rootNavigator:
+                          widget.actionButtons.useRootNavigator)
+                          .canPop()) {
+                        Navigator.of(context,
+                            rootNavigator:
+                            widget.actionButtons.useRootNavigator)
+                            .pop(false);
+                      }
+                    }
                         : null,
                     toolIcons: widget.actionButtons,
                     copyPasteBehavior: widget.copyPasteBehavior,
@@ -1526,7 +1575,7 @@ class _ColorPickerState extends State<ColorPicker> {
                       });
                     },
                     thumbColor: widget.selectedPickerTypeColor,
-                    textStyle: widget.pickerTypeTextStyle,
+                    textStyle: TextStyle(color: Colors.white, fontSize: 12),
                     columnSpacing: widget.columnSpacing,
                   ),
                 ),
@@ -1541,7 +1590,7 @@ class _ColorPickerState extends State<ColorPicker> {
                   runSpacing: widget.runSpacing,
                   columnSpacing: widget.columnSpacing,
                   activeColorSwatchList: _activeColorSwatchList,
-                  selectedColor: _selectedColor.withAlpha(0xFF),
+                  selectedColor: widget.selectedColor.withAlpha(0xFF),
                   onSelectColor: _onSelectColor,
                   includeIndex850: widget.includeIndex850,
                   width: widget.width,
@@ -1561,7 +1610,7 @@ class _ColorPickerState extends State<ColorPicker> {
                     height: widget.wheelDiameter,
                     width: widget.wheelDiameter,
                     child: ColorWheelPicker(
-                      color: _selectedColor.withAlpha(0xFF),
+                      color: widget.selectedColor.withAlpha(0xFF),
                       wheelWidth: widget.wheelWidth,
                       hasBorder: widget.wheelHasBorder,
                       borderColor: widget.borderColor,
@@ -1576,14 +1625,14 @@ class _ColorPickerState extends State<ColorPicker> {
                       },
                       onChanged: (Color color) {
                         setState(() {
-                          _selectedColor = color.withOpacity(_opacity);
+                          widget.selectedColor = color.withOpacity(_opacity);
                           _wheelShouldUpdate = false;
                           _editShouldUpdate = true;
                           _selectedShouldFocus = true;
                           _wheelShouldFocus = false;
                           _updateActiveSwatch();
                         });
-                        widget.onColorChanged(_selectedColor);
+                        widget.onColorChanged(widget.selectedColor);
                       },
                       onChangeEnd: (Color color) {
                         if (widget.onColorChangeEnd != null) {
@@ -1621,7 +1670,7 @@ class _ColorPickerState extends State<ColorPicker> {
                   runSpacing: widget.runSpacing,
                   columnSpacing: widget.columnSpacing,
                   activeSwatch: _activeSwatch!,
-                  selectedColor: _selectedColor.withAlpha(0xFF),
+                  selectedColor: widget.selectedColor.withAlpha(0xFF),
                   onSelectColor: (Color color) {
                     _onSelectColor(color);
                     if (_activePicker == ColorPickerType.wheel) {
@@ -1656,7 +1705,7 @@ class _ColorPickerState extends State<ColorPicker> {
                         : widget.opacityTrackWidth,
                     child: RepaintBoundary(
                       child: OpacitySlider(
-                        color: _selectedColor.withAlpha(0xFF),
+                        color: widget.selectedColor.withAlpha(0xFF),
                         opacity: _opacity,
                         trackHeight: widget.opacityTrackHeight,
                         thumbRadius: widget.opacityThumbRadius,
@@ -1667,33 +1716,33 @@ class _ColorPickerState extends State<ColorPicker> {
                             _opacityFocusNode.requestFocus();
                             setState(() {
                               _opacity = value;
-                              _selectedColor =
-                                  _selectedColor.withOpacity(_opacity);
+                              widget.selectedColor =
+                                  widget.selectedColor.withOpacity(_opacity);
                             });
-                            widget.onColorChangeStart!(_selectedColor);
+                            widget.onColorChangeStart!(widget.selectedColor);
                           }
-                          _addToRecentColors(_selectedColor);
+                          _addToRecentColors(widget.selectedColor);
                         },
                         onChanged: (double value) {
                           setState(() {
                             _opacity = value;
-                            _selectedColor =
-                                _selectedColor.withOpacity(_opacity);
+                            widget.selectedColor =
+                                widget.selectedColor.withOpacity(_opacity);
                             _wheelShouldUpdate = false;
                             _editShouldUpdate = true;
                             _selectedShouldFocus = true;
                             _wheelShouldFocus = false;
                           });
-                          widget.onColorChanged(_selectedColor);
+                          widget.onColorChanged(widget.selectedColor);
                         },
                         onChangeEnd: (double value) {
                           if (widget.onColorChangeEnd != null) {
                             setState(() {
                               _opacity = value;
-                              _selectedColor =
-                                  _selectedColor.withOpacity(_opacity);
+                              widget.selectedColor =
+                                  widget.selectedColor.withOpacity(_opacity);
                             });
-                            widget.onColorChangeEnd!(_selectedColor);
+                            widget.onColorChangeEnd!(widget.selectedColor);
                           }
                         },
                       ),
@@ -1713,9 +1762,9 @@ class _ColorPickerState extends State<ColorPicker> {
                         padding: EdgeInsets.only(bottom: widget.columnSpacing),
                         child: Text(
                           ColorTools.materialName(
-                            _selectedColor.withAlpha(0xFF),
+                            widget.selectedColor.withAlpha(0xFF),
                             colorSwatchNameMap:
-                                widget.customColorSwatchesAndNames,
+                            widget.customColorSwatchesAndNames,
                           ),
                           style: effectiveMaterialNameStyle,
                         ),
@@ -1730,7 +1779,7 @@ class _ColorPickerState extends State<ColorPicker> {
                         padding: EdgeInsets.only(bottom: widget.columnSpacing),
                         child: Text(
                           ColorTools.nameThatColor(
-                              _selectedColor.withAlpha(0xFF)),
+                              widget.selectedColor.withAlpha(0xFF)),
                           style: effectiveGenericNameStyle,
                         ),
                       ),
@@ -1751,7 +1800,7 @@ class _ColorPickerState extends State<ColorPicker> {
                       // Show the color code view and edit field, if enabled.
                       if (widget.showColorCode)
                         ColorCodeField(
-                          color: _selectedColor,
+                          color: widget.selectedColor,
                           readOnly: _activePicker != ColorPickerType.wheel ||
                               widget.colorCodeReadOnly,
                           textStyle: widget.colorCodeTextStyle,
@@ -1761,19 +1810,20 @@ class _ColorPickerState extends State<ColorPicker> {
                           shouldUpdate: _editShouldUpdate,
                           onColorChanged: (Color color) {
                             if (widget.onColorChangeStart != null) {
-                              widget.onColorChangeStart!(_selectedColor);
+                              widget.onColorChangeStart!(widget.selectedColor);
                             }
                             setState(() {
-                              _selectedColor = color.withOpacity(_opacity);
+                              widget.selectedColor =
+                                  color.withOpacity(_opacity);
                               // Color changed outside wheel picker, when the
                               // code was edited, the wheel should update.
                               _wheelShouldUpdate = true;
                               _editShouldUpdate = false;
                               _updateActiveSwatch();
                             });
-                            widget.onColorChanged(_selectedColor);
+                            widget.onColorChanged(widget.selectedColor);
                             if (widget.onColorChangeEnd != null) {
-                              widget.onColorChangeEnd!(_selectedColor);
+                              widget.onColorChangeEnd!(widget.selectedColor);
                             }
                             _addToRecentColors(color);
                           },
@@ -1795,7 +1845,7 @@ class _ColorPickerState extends State<ColorPicker> {
                         const SizedBox(width: 8),
                       if (widget.showColorValue)
                         SelectableText(
-                          _selectedColor.value.toString(),
+                          widget.selectedColor.value.toString(),
                           style: effectiveCodeStyle,
                         ),
                     ],
@@ -1815,7 +1865,7 @@ class _ColorPickerState extends State<ColorPicker> {
                   runSpacing: widget.runSpacing,
                   columnSpacing: widget.columnSpacing,
                   recentColors: _recentColors,
-                  selectedColor: _selectedColor,
+                  selectedColor: widget.selectedColor,
                   onSelectColor: (Color color) {
                     _onSelectColor(color, keepOpacity: true, findPicker: true);
                   },
@@ -1837,8 +1887,7 @@ class _ColorPickerState extends State<ColorPicker> {
   }
 
   // A color was selected by tapping it, update state and notify via callbacks.
-  void _onSelectColor(
-    Color color, {
+  void _onSelectColor(Color color, {
     // Set to true to use opacity in `color` and let it replace _opacity.
     // Done when selecting colors in recently used colors, otherwise not.
     bool keepOpacity = false,
@@ -1849,16 +1898,16 @@ class _ColorPickerState extends State<ColorPicker> {
   }) {
     // Call start callback with current selectedColor before change.
     if (widget.onColorChangeStart != null) {
-      widget.onColorChangeStart!(_selectedColor);
+      widget.onColorChangeStart!(widget.selectedColor);
     }
     // Add the previously selected color to recent colors.
-    _addToRecentColors(_selectedColor);
+    _addToRecentColors(widget.selectedColor);
     // update the state of the selectedColor to the new selected color.
     setState(() {
       // Set selected color to the new value.
-      _selectedColor = keepOpacity ? color : color.withOpacity(_opacity);
+      widget.selectedColor = keepOpacity ? color : color.withOpacity(_opacity);
       if (keepOpacity && widget.enableOpacity) {
-        _opacity = _selectedColor.opacity;
+        _opacity = widget.selectedColor.opacity;
       }
       // When the a color was clicked and selected, the right item is already
       // focused an other selected color indicators and wheel should not focus.
@@ -1869,11 +1918,11 @@ class _ColorPickerState extends State<ColorPicker> {
       _wheelShouldUpdate = true;
       _editShouldUpdate = true;
 
-      // Find best matching picker of the enabled ones for _selectedColor.
+      // Find best matching picker of the enabled ones for widget._selectedColor.
       if (findPicker) {
         // Make a swatch of the selected color in the wheel.
         _typeToSwatchMap[ColorPickerType.wheel] = <ColorSwatch<Object>>[
-          ColorTools.createPrimarySwatch(_selectedColor.withAlpha(0xFF))
+          ColorTools.createPrimarySwatch(widget.selectedColor.withAlpha(0xFF))
         ];
         _findPicker();
       }
@@ -1882,16 +1931,17 @@ class _ColorPickerState extends State<ColorPicker> {
       // This check eliminates a rebuild when the selected color is a member
       // of the currently displayed color swatch.
       if (_activePicker != ColorPickerType.wheel ||
-          !ColorTools.swatchContainsColor(_activeSwatch!, _selectedColor)) {
+          !ColorTools.swatchContainsColor(
+              _activeSwatch!, widget.selectedColor)) {
         // Update the active swatch to match the selected color.
         _updateActiveSwatch();
       }
     });
     // Call the change call back with the new color.
-    widget.onColorChanged(_selectedColor);
+    widget.onColorChanged(widget.selectedColor);
     // We have and end callback, call it with the new color.
     if (widget.onColorChangeEnd != null) {
-      widget.onColorChangeEnd!(_selectedColor);
+      widget.onColorChangeEnd!(widget.selectedColor);
     }
   }
 
@@ -1902,7 +1952,7 @@ class _ColorPickerState extends State<ColorPicker> {
     if (_recentColors.contains(color)) return;
     // Clamp the max recent colors to the allowed range.
     final int clampedRecentColors =
-        widget.maxRecentColors.clamp(_minRecentColors, _maxRecentColors);
+    widget.maxRecentColors.clamp(_minRecentColors, _maxRecentColors);
     // Max recent colors reached, remove first one added.
     if (_recentColors.length >= clampedRecentColors) {
       _recentColors.removeRange(clampedRecentColors - 1, _recentColors.length);
@@ -1937,7 +1987,9 @@ class _ColorPickerState extends State<ColorPicker> {
     // So CMD modifier did not get used, only CTRL worked. We can use context
     // based Theme.platform instead here and skip RawKeyEventData, or just
     // combine it with RawKeyEventData. Since we have a context it works too.
-    final TargetPlatform platform = Theme.of(context).platform;
+    final TargetPlatform platform = Theme
+        .of(context)
+        .platform;
     // Should COMMAND modifier be used instead of CTRL for keyboard COPY-PASTE?
     // Use all sources we have to determine if it is iOS or macOS that should
     // use CMD for copy/paste instead of CTRL.
@@ -1949,7 +2001,7 @@ class _ColorPickerState extends State<ColorPicker> {
     // isModifierPressed will be true when COMMAND key is pressed on macOS/iOS
     // OR when CTRL key is pressed on other platforms.
     final bool isModifierPressed =
-        useCommandModifier ? event.isMetaPressed : event.isControlPressed;
+    useCommandModifier ? event.isMetaPressed : event.isControlPressed;
 
     // The raw keyboard listener reacts to both up and down events, we only use
     // down, so that we only execute the copy and paste keyboard command once
@@ -1959,16 +2011,16 @@ class _ColorPickerState extends State<ColorPicker> {
       // If logical key is paste OR modifier+V and we use ctrlV paste behavior,
       // we get the latest clipboard data.
       if ((event.logicalKey == LogicalKeyboardKey.paste ||
-              (isModifierPressed &&
-                  event.logicalKey == LogicalKeyboardKey.keyV)) &&
+          (isModifierPressed &&
+              event.logicalKey == LogicalKeyboardKey.keyV)) &&
           widget.copyPasteBehavior.ctrlV) {
         _getClipboard();
       }
       // If logical key is copy or modifier+C and we used ctrlC copy behavior,
       // we set the current color to the clipboard data.
       if ((event.logicalKey == LogicalKeyboardKey.copy ||
-              (isModifierPressed &&
-                  event.logicalKey == LogicalKeyboardKey.keyC)) &&
+          (isModifierPressed &&
+              event.logicalKey == LogicalKeyboardKey.keyC)) &&
           widget.copyPasteBehavior.ctrlC) {
         _setClipboard();
       }
@@ -1987,10 +2039,10 @@ class _ColorPickerState extends State<ColorPicker> {
     // If result is not null, we got a valid color.
     if (clipColor != null) {
       if (widget.onColorChangeStart != null) {
-        widget.onColorChangeStart!(_selectedColor);
+        widget.onColorChangeStart!(widget.selectedColor);
       }
       // Add the previous selected color to recent colors
-      _addToRecentColors(_selectedColor);
+      _addToRecentColors(widget.selectedColor);
       // This wait for 100ms feels a bit like a hack, but if not done, the
       // paste when using paste parser in the color code edit field DOES NOT
       // WORK correctly. This delay allows the used TextField to first process
@@ -2002,25 +2054,25 @@ class _ColorPickerState extends State<ColorPicker> {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       setState(() {
         // If opacity is not enabled, we remove any alpha from pasted colors.
-        _selectedColor =
-            widget.enableOpacity ? clipColor : clipColor.withAlpha(0xFF);
-        _opacity = widget.enableOpacity ? _selectedColor.opacity : 1;
+        widget.selectedColor =
+        widget.enableOpacity ? clipColor : clipColor.withAlpha(0xFF);
+        _opacity = widget.enableOpacity ? widget.selectedColor.opacity : 1;
         // Color changed outside wheel and edit field, a new shade or color was
         // selected outside the wheel and edit, they should update!
         _wheelShouldUpdate = true;
         _editShouldUpdate = true;
-        // Make a swatch of the new via paste _selectedColor for the wheel.
+        // Make a swatch of the new via paste widget._selectedColor for the wheel.
         _typeToSwatchMap[ColorPickerType.wheel] = <ColorSwatch<Object>>[
-          ColorTools.createPrimarySwatch(_selectedColor.withAlpha(0xFF)),
+          ColorTools.createPrimarySwatch(widget.selectedColor.withAlpha(0xFF)),
         ];
         // Move the picker to the pasted color value and update active swatch.
         _findPicker();
         _updateActiveSwatch();
       });
       // Callback with new color
-      widget.onColorChanged(_selectedColor);
+      widget.onColorChanged(widget.selectedColor);
       if (widget.onColorChangeEnd != null) {
-        widget.onColorChangeEnd!(_selectedColor);
+        widget.onColorChangeEnd!(widget.selectedColor);
       }
     }
     // ELSE FOR: Clipboard could not parsed to a Color()
@@ -2050,8 +2102,8 @@ class _ColorPickerState extends State<ColorPicker> {
           if (!mounted) return;
           // Get the Material localizations.
           final MaterialLocalizations translate =
-              // ignore:
-              MaterialLocalizations.of(context);
+          // ignore:
+          MaterialLocalizations.of(context);
           snackBarMessage = '${translate.pasteButtonLabel}: '
               '${translate.invalidDateFormatLabel}';
         }
@@ -2079,19 +2131,19 @@ class _ColorPickerState extends State<ColorPicker> {
     String colorString = '00000000';
     switch (widget.copyPasteBehavior.copyFormat) {
       case ColorPickerCopyFormat.dartCode:
-        colorString = '0x${_selectedColor.hexAlpha}';
+        colorString = '0x${widget.selectedColor.hexAlpha}';
         break;
       case ColorPickerCopyFormat.hexRRGGBB:
-        colorString = _selectedColor.hex;
+        colorString = widget.selectedColor.hex;
         break;
       case ColorPickerCopyFormat.hexAARRGGBB:
-        colorString = _selectedColor.hexAlpha;
+        colorString = widget.selectedColor.hexAlpha;
         break;
       case ColorPickerCopyFormat.numHexRRGGBB:
-        colorString = '#${_selectedColor.hex}';
+        colorString = '#${widget.selectedColor.hex}';
         break;
       case ColorPickerCopyFormat.numHexAARRGGBB:
-        colorString = '#${_selectedColor.hexAlpha}';
+        colorString = '#${widget.selectedColor.hexAlpha}';
         break;
     }
     final ClipboardData data = ClipboardData(text: colorString);

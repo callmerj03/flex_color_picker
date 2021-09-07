@@ -130,7 +130,7 @@ Future<bool> colorPickerDialog(
         ? watch(cardRecentColorsPod).state
         : watch(dialogRecentColorsPod).state,
     maxRecentColors: cardRemote ? 8 : 5,
-    customColorSwatchesAndNames: App.colorsNameMap,
+    customColorSwatchesAndNames: App.colorsNameMap, onColorAdd: (Color value) {  },
   ).showPickerDialog(
     context,
     elevation: 4,

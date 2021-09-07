@@ -55,6 +55,7 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
   late Color dialogPickerColor; // Color for picker in dialog using onChanged
   late Color dialogSelectColor; // Color for picker using color select dialog.
   late bool isDark;
+  List<Color> listofColors = [];
 
   // Define some custom colors for the custom picker segment.
   // The 'guide' color values are from
@@ -125,119 +126,169 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
                 },
               ),
             ),
-            ListTile(
-              title: const Text('Click to select a new color from a dialog'),
-              subtitle: Text(
-                '${ColorTools.materialNameAndCode(dialogSelectColor, colorSwatchNameMap: colorsNameMap)} '
-                'aka ${ColorTools.nameThatColor(dialogSelectColor)}',
-              ),
-              trailing: ColorIndicator(
-                  width: 40,
-                  height: 40,
-                  borderRadius: 0,
-                  color: dialogSelectColor,
-                  elevation: 1,
-                  onSelectFocus: false,
-                  onSelect: () async {
-                    // Wait for the dialog to return color selection result.
-                    final Color newColor = await showColorPickerDialog(
-                      // The dialog needs a context, we pass it in.
-                      context,
-                      // We use the dialogSelectColor, as its starting color.
-                      dialogSelectColor,
-                      title: Text('ColorPicker',
-                          style: Theme.of(context).textTheme.headline6),
-                      width: 40,
-                      height: 40,
-                      spacing: 0,
-                      runSpacing: 0,
-                      borderRadius: 0,
-                      wheelDiameter: 165,
-                      enableOpacity: true,
-                      showColorCode: true,
-                      colorCodeHasColor: true,
-                      pickersEnabled: <ColorPickerType, bool>{
-                        ColorPickerType.wheel: true,
-                      },
-                      copyPasteBehavior: const ColorPickerCopyPasteBehavior(
-                        copyButton: true,
-                        pasteButton: true,
-                        longPressMenu: true,
+
+            Container(
+              height: 48,
+              margin: EdgeInsets.symmetric(horizontal: 16),
+              child: ListView.separated(
+                itemCount: listofColors.length,
+                scrollDirection: Axis.horizontal,
+                itemBuilder: (context, index) {
+                  return Stack(
+                    children: [
+                      Container(
+                        height: 48,
+                        width: 48,
+                        margin: EdgeInsets.only(top: 8 , right: 8),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: listofColors[index]),
                       ),
-                      actionButtons: const ColorPickerActionButtons(
-                        okButton: true,
-                        closeButton: true,
-                        dialogActionButtons: false,
+                      Positioned(
+                        child: GestureDetector(
+                          child: Container(
+                            child: Icon(
+                              Icons.close,
+                              color: Color(0xFF464646),
+                              size: 16,
+                            ),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                color: Color(0xFFF9C42A)),
+                            height: 24,
+                            width: 24,
+                          ),
+                          onTap: (){
+                            setState(() {
+                              listofColors.removeAt(index);
+                            });
+                          },
+                        ),
+                        right: 0,
                       ),
-                      constraints: const BoxConstraints(
-                          minHeight: 480, minWidth: 320, maxWidth: 320),
-                    );
-                    // We update the dialogSelectColor, to the returned result
-                    // color. If the dialog was dismissed it actually returns
-                    // the color we started with. The extra update for that
-                    // below does not really matter, but if you want you can
-                    // check if they are equal and skip the update below.
-                    setState(() {
-                      dialogSelectColor = newColor;
-                    });
-                  }),
-            ),
-
-            // Show the selected color.
-            ListTile(
-              title: const Text('Select color below to change this color'),
-              subtitle:
-                  Text('${ColorTools.materialNameAndCode(screenPickerColor)} '
-                      'aka ${ColorTools.nameThatColor(screenPickerColor)}'),
-              trailing: ColorIndicator(
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                color: screenPickerColor,
+                    ],
+                  );
+                },
+                separatorBuilder: (BuildContext context, int index) {
+                  return SizedBox(
+                    width: 16,
+                  );
+                },
               ),
             ),
-
-            // Show the color picker in sized box in a raised card.
-            SizedBox(
-              width: double.infinity,
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: Card(
-                  elevation: 2,
-                  child: ColorPicker(
-                    // Use the screenPickerColor as start color.
-                    color: screenPickerColor,
-                    // Update the screenPickerColor using the callback.
-                    onColorChanged: (Color color) =>
-                        setState(() => screenPickerColor = color),
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
-                    heading: Text(
-                      'Select color',
-                      style: Theme.of(context).textTheme.headline5,
-                    ),
-                    subheading: Text(
-                      'Select color shade',
-                      style: Theme.of(context).textTheme.subtitle1,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Theme mode toggle
-            SwitchListTile.adaptive(
-              title: const Text('Turn ON for dark mode'),
-              subtitle: const Text('Turn OFF for light mode'),
-              value: isDark,
-              onChanged: (bool value) {
-                setState(() {
-                  isDark = value;
-                  widget.themeMode(isDark ? ThemeMode.dark : ThemeMode.light);
-                });
-              },
-            )
+            // ListTile(
+            //   title: const Text('Click to select a new color from a dialog'),
+            //   subtitle: Text(
+            //     '${ColorTools.materialNameAndCode(dialogSelectColor, colorSwatchNameMap: colorsNameMap)} '
+            //     'aka ${ColorTools.nameThatColor(dialogSelectColor)}',
+            //   ),
+            //   trailing: ColorIndicator(
+            //       width: 40,
+            //       height: 40,
+            //       borderRadius: 0,
+            //       color: dialogSelectColor,
+            //       elevation: 1,
+            //       onSelectFocus: false,
+            //       onSelect: () async {
+            //         // Wait for the dialog to return color selection result.
+            //         final Color newColor = await showColorPickerDialog(
+            //           // The dialog needs a context, we pass it in.
+            //           context,
+            //           // We use the dialogSelectColor, as its starting color.
+            //           dialogSelectColor,
+            //           title: Text('ColorPicker',
+            //               style: Theme.of(context).textTheme.headline6),
+            //           width: 40,
+            //           height: 40,
+            //           spacing: 0,
+            //           runSpacing: 0,
+            //           borderRadius: 0,
+            //           wheelDiameter: 165,
+            //           enableOpacity: true,
+            //           showColorCode: true,
+            //           colorCodeHasColor: true,
+            //           pickersEnabled: <ColorPickerType, bool>{
+            //             ColorPickerType.wheel: true,
+            //           },
+            //           copyPasteBehavior: const ColorPickerCopyPasteBehavior(
+            //             copyButton: true,
+            //             pasteButton: true,
+            //             longPressMenu: true,
+            //           ),
+            //           actionButtons: const ColorPickerActionButtons(
+            //             okButton: true,
+            //             closeButton: true,
+            //             dialogActionButtons: false,
+            //           ),
+            //           constraints: const BoxConstraints(
+            //               minHeight: 480, minWidth: 320, maxWidth: 320),
+            //         );
+            //         // We update the dialogSelectColor, to the returned result
+            //         // color. If the dialog was dismissed it actually returns
+            //         // the color we started with. The extra update for that
+            //         // below does not really matter, but if you want you can
+            //         // check if they are equal and skip the update below.
+            //         setState(() {
+            //           dialogSelectColor = newColor;
+            //         });
+            //       }),
+            // ),
+            //
+            // // Show the selected color.
+            // ListTile(
+            //   title: const Text('Select color below to change this color'),
+            //   subtitle:
+            //       Text('${ColorTools.materialNameAndCode(screenPickerColor)} '
+            //           'aka ${ColorTools.nameThatColor(screenPickerColor)}'),
+            //   trailing: ColorIndicator(
+            //     width: 44,
+            //     height: 44,
+            //     borderRadius: 22,
+            //     color: screenPickerColor,
+            //   ),
+            // ),
+            //
+            // // Show the color picker in sized box in a raised card.
+            // SizedBox(
+            //   width: double.infinity,
+            //   child: Padding(
+            //     padding: const EdgeInsets.all(6),
+            //     child: Card(
+            //       elevation: 2,
+            //       child: ColorPicker(
+            //         // Use the screenPickerColor as start color.
+            //         color: screenPickerColor,
+            //         // Update the screenPickerColor using the callback.
+            //         onColorChanged: (Color color) =>
+            //             setState(() => screenPickerColor = color),
+            //         width: 44,
+            //         height: 44,
+            //         borderRadius: 22,
+            //         heading: Text(
+            //           'Select color',
+            //           style: Theme.of(context).textTheme.headline5,
+            //         ),
+            //         subheading: Text(
+            //           'Select color shade',
+            //           style: Theme.of(context).textTheme.subtitle1,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            //
+            // // Theme mode toggle
+            // SwitchListTile.adaptive(
+            //   title: const Text('Turn ON for dark mode'),
+            //   subtitle: const Text('Turn OFF for light mode'),
+            //   value: isDark,
+            //   onChanged: (bool value) {
+            //     setState(() {
+            //       isDark = value;
+            //       widget.themeMode(isDark ? ThemeMode.dark : ThemeMode.light);
+            //     });
+            //   },
+            // )
           ],
         ),
       ),
@@ -245,6 +296,8 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
   }
 
   Future<bool> colorPickerDialog() async {
+    int limitofColorSelection = 8;
+
     return ColorPicker(
       color: dialogPickerColor,
       onColorChanged: (Color color) =>
@@ -255,21 +308,26 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
       spacing: 5,
       runSpacing: 5,
       wheelDiameter: 155,
+      buttonText2: "બંધ",
+      buttonText1: "ઉમેરો",
       heading: Text(
         'Select color',
-        style: Theme.of(context).textTheme.subtitle1,
+        style: TextStyle(
+            color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
       ),
       subheading: Text(
         'Select color shade',
-        style: Theme.of(context).textTheme.subtitle1,
+        style: TextStyle(
+            color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
       ),
       wheelSubheading: Text(
         'Selected color and its shades',
-        style: Theme.of(context).textTheme.subtitle1,
+        style: TextStyle(
+            color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
       ),
-      showMaterialName: true,
+      showMaterialName: false,
       showColorName: true,
-      showColorCode: true,
+      showColorCode: false,
       copyPasteBehavior: const ColorPickerCopyPasteBehavior(
         longPressMenu: true,
       ),
@@ -277,16 +335,25 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
       colorNameTextStyle: Theme.of(context).textTheme.caption,
       colorCodeTextStyle: Theme.of(context).textTheme.bodyText2,
       colorCodePrefixStyle: Theme.of(context).textTheme.caption,
-      selectedPickerTypeColor: Theme.of(context).colorScheme.primary,
+      selectedPickerTypeColor: Color(0xFFF9C42A),
       pickersEnabled: const <ColorPickerType, bool>{
         ColorPickerType.both: false,
         ColorPickerType.primary: true,
         ColorPickerType.accent: true,
         ColorPickerType.bw: false,
-        ColorPickerType.custom: true,
+        ColorPickerType.custom: false,
         ColorPickerType.wheel: true,
       },
       customColorSwatchesAndNames: colorsNameMap,
+      onColorAdd: (Color value) {
+        if (limitofColorSelection != listofColors.length) {
+          setState(() {
+            listofColors.add(value);
+          });
+        } else {}
+
+        print("lalalall $value");
+      },
     ).showPickerDialog(
       context,
       constraints:
