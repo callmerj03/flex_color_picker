@@ -56,6 +56,7 @@ const int _maxRecentColors = 20;
 @immutable
 class ColorPicker extends StatefulWidget {
   /// Default constructor for the color picker.
+
   ColorPicker({
     Key? key,
     // Core properties, set color and change callbacks.
@@ -67,6 +68,9 @@ class ColorPicker extends StatefulWidget {
     this.buttonText1 = "",
     this.buttonText2 = "",
     this.onColorAdd,
+    this.onClosePopup,
+    this.getColorArray,
+    this.listofColors,
     // Color picker types shown and used by the color picker.
     this.pickersEnabled = const <ColorPickerType, bool>{
       ColorPickerType.both: false,
@@ -121,7 +125,8 @@ class ColorPicker extends StatefulWidget {
     @Deprecated('This property is deprecated and no longer has any function. '
         'It was removed in v2.0.0. To modify the copy icon on the color code '
         'entry field, define the `ColorPickerCopyPasteBehavior(copyIcon: '
-        'myIcon)` and provide it via the `copyPasteBehavior` property.') this.colorCodeIcon,
+        'myIcon)` and provide it via the `copyPasteBehavior` property.')
+    this.colorCodeIcon,
     this.colorCodePrefixStyle,
     this.colorCodeReadOnly = false,
     this.showColorValue = false,
@@ -146,8 +151,7 @@ class ColorPicker extends StatefulWidget {
     // Custom color swatches and name map for the custom color swatches.
     this.customColorSwatchesAndNames = const <ColorSwatch<Object>, String>{},
     //
-  })
-      : assert(columnSpacing >= 0 && columnSpacing <= 300,
+  })  : assert(columnSpacing >= 0 && columnSpacing <= 300,
   'The picker item column spacing must be from 0 to max 300 dp.'),
         assert(spacing >= 0 && spacing <= 50,
         'The picker item spacing must be from 0 to max 50 dp.'),
@@ -192,6 +196,9 @@ class ColorPicker extends StatefulWidget {
   final ValueChanged<Color> onColorChanged;
 
   final ValueChanged<Color>? onColorAdd;
+  final ValueChanged<int>? onClosePopup;
+
+  List<Color>? getColorArray;
 
   /// Optional [ValueChanged] callback. Called when user starts color selection
   /// with current color value.
@@ -633,6 +640,7 @@ class ColorPicker extends StatefulWidget {
   static const String _selectWheelAnyLabel = 'Wheel';
 
   Color selectedColor;
+  List<Color>? listofColors;
 
   @override
   _ColorPickerState createState() => _ColorPickerState();
@@ -655,7 +663,6 @@ class ColorPicker extends StatefulWidget {
   /// The actual color selected in the dialog is handled via the `onChange`
   /// callbacks of the [ColorPicker] instance.
   Future<bool> showPickerDialog(
-
       /// The dialog requires a BuildContext.
       BuildContext context, {
 
@@ -814,7 +821,8 @@ class ColorPicker extends StatefulWidget {
           'This property is no longer set here and has no function if assigned here. '
               'From version 2.1.0 it must be defined via same property in configuration '
               'class ColorPickerActionButtons(useRootNavigator).',
-        ) bool useRootNavigator = true,
+        )
+        bool useRootNavigator = true,
 
         /// The `routeSettings` argument is passed to [showGeneralDialog],
         /// see [RouteSettings] for details.
@@ -956,6 +964,7 @@ class ColorPicker extends StatefulWidget {
                 ? <Widget>[
               GestureDetector(
                   onTap: () {
+                    // listofColors?.add(selectedColor);
                     onColorAdd!(selectedColor);
                   },
                   child: Text(
@@ -968,7 +977,7 @@ class ColorPicker extends StatefulWidget {
 
               GestureDetector(
                   onTap: () {
-                    Navigator.pop(context);
+                    onClosePopup!(1);
                   },
                   child: Text(
                     "${buttonText2}",
@@ -1395,24 +1404,15 @@ class _ColorPickerState extends State<ColorPicker> {
     // The effective used text style, if null was passed in we assign defaults.
     final TextStyle effectiveMaterialNameStyle =
         (widget.materialNameTextStyle ??
-            Theme
-                .of(context)
-                .textTheme
-                .bodyText2) ??
+            Theme.of(context).textTheme.bodyText2) ??
             const TextStyle();
     final TextStyle effectiveGenericNameStyle =
-        (widget.colorNameTextStyle ?? Theme
-            .of(context)
-            .textTheme
-            .bodyText2) ??
+        (widget.colorNameTextStyle ?? Theme.of(context).textTheme.bodyText2) ??
             const TextStyle();
 
     // Set the default integer code value text style to bodyText2 if not given.
     final TextStyle effectiveCodeStyle =
-        (widget.colorCodeTextStyle ?? Theme
-            .of(context)
-            .textTheme
-            .bodyText2) ??
+        (widget.colorCodeTextStyle ?? Theme.of(context).textTheme.bodyText2) ??
             const TextStyle();
 
     // TODO: Remove these comments
@@ -1695,6 +1695,7 @@ class _ColorPickerState extends State<ColorPicker> {
                   padding: EdgeInsets.only(bottom: widget.columnSpacing),
                   child: widget.opacitySubheading,
                 ),
+
               // Draw the opacity slider if enabled.
               if (widget.enableOpacity)
                 Padding(
@@ -1749,6 +1750,7 @@ class _ColorPickerState extends State<ColorPicker> {
                     ),
                   ),
                 ),
+
               // If we show material or generic name, we enclose them in a
               // Wrap, they will be on same row nicely if there is room
               // enough, but also wrap to two rows when so needed when both
@@ -1766,7 +1768,7 @@ class _ColorPickerState extends State<ColorPicker> {
                             colorSwatchNameMap:
                             widget.customColorSwatchesAndNames,
                           ),
-                          style: effectiveMaterialNameStyle,
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     // If we show both material and generic name, add some
@@ -1785,10 +1787,62 @@ class _ColorPickerState extends State<ColorPicker> {
                       ),
                   ],
                 ),
-              // If we show color code or its int value, we enclose them in a
-              // Wrap, they will be on same row nicely if there is room enough
-              // but also wrap to two rows when so needed when both are
-              // shown at the same and they don't fit on one row.
+
+              SizedBox(height: 16),
+
+              widget.listofColors != null ?
+              Container(
+                height: 48,
+                width: 300,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: widget.listofColors!.length,
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: [
+                        Container(
+                          height: 48,
+                          width: 48,
+                          margin: EdgeInsets.only(top: 8, right: 8),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: widget.listofColors?[index]),
+                        ),
+                        Positioned(
+                          child: GestureDetector(
+                            child: Container(
+                              child: Icon(
+                                Icons.close,
+                                color: Color(0xFF464646),
+                                size: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: Color(0xFFF9C42A)),
+                              height: 24,
+                              width: 24,
+                            ),
+                            onTap: () {
+                              setState(() {
+                                widget.listofColors?.removeAt(index);
+                              });
+                            },
+                          ),
+                          right: 0,
+                        ),
+                      ],
+                    );
+                  },
+                  separatorBuilder: (BuildContext context, int index) {
+                    return SizedBox(
+                      width: 16,
+                    );
+                  },
+                ),
+              ) : Container(),
+
+
               if (widget.showColorCode || widget.showColorValue)
                 Padding(
                   padding: EdgeInsets.only(bottom: widget.columnSpacing),
@@ -1887,15 +1941,16 @@ class _ColorPickerState extends State<ColorPicker> {
   }
 
   // A color was selected by tapping it, update state and notify via callbacks.
-  void _onSelectColor(Color color, {
-    // Set to true to use opacity in `color` and let it replace _opacity.
-    // Done when selecting colors in recently used colors, otherwise not.
-    bool keepOpacity = false,
-    // Normally when colors are selected, we do not need find the picker as they
-    // are in the same picker. However, recently used colors sets this to true
-    // as its colors can be in any picker, so it must be found.
-    bool findPicker = false,
-  }) {
+  void _onSelectColor(
+      Color color, {
+        // Set to true to use opacity in `color` and let it replace _opacity.
+        // Done when selecting colors in recently used colors, otherwise not.
+        bool keepOpacity = false,
+        // Normally when colors are selected, we do not need find the picker as they
+        // are in the same picker. However, recently used colors sets this to true
+        // as its colors can be in any picker, so it must be found.
+        bool findPicker = false,
+      }) {
     // Call start callback with current selectedColor before change.
     if (widget.onColorChangeStart != null) {
       widget.onColorChangeStart!(widget.selectedColor);
@@ -1987,9 +2042,7 @@ class _ColorPickerState extends State<ColorPicker> {
     // So CMD modifier did not get used, only CTRL worked. We can use context
     // based Theme.platform instead here and skip RawKeyEventData, or just
     // combine it with RawKeyEventData. Since we have a context it works too.
-    final TargetPlatform platform = Theme
-        .of(context)
-        .platform;
+    final TargetPlatform platform = Theme.of(context).platform;
     // Should COMMAND modifier be used instead of CTRL for keyboard COPY-PASTE?
     // Use all sources we have to determine if it is iOS or macOS that should
     // use CMD for copy/paste instead of CTRL.

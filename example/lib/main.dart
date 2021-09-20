@@ -126,12 +126,12 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
                 },
               ),
             ),
-
             Container(
               height: 48,
               margin: EdgeInsets.symmetric(horizontal: 16),
               child: ListView.separated(
                 itemCount: listofColors.length,
+                reverse: true,
                 scrollDirection: Axis.horizontal,
                 itemBuilder: (context, index) {
                   return Stack(
@@ -139,7 +139,7 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
                       Container(
                         height: 48,
                         width: 48,
-                        margin: EdgeInsets.only(top: 8 , right: 8),
+                        margin: EdgeInsets.only(top: 8, right: 8),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                             color: listofColors[index]),
@@ -158,7 +158,7 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
                             height: 24,
                             width: 24,
                           ),
-                          onTap: (){
+                          onTap: () {
                             setState(() {
                               listofColors.removeAt(index);
                             });
@@ -295,6 +295,16 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
     );
   }
 
+  Color? _getColorFromHex(String hexColor) {
+    hexColor = hexColor.replaceAll("#", "");
+    if (hexColor.length == 6) {
+      hexColor = "FF" + hexColor;
+    }
+    if (hexColor.length == 8) {
+      return Color(int.parse("0x$hexColor"));
+    }
+  }
+
   Future<bool> colorPickerDialog() async {
     int limitofColorSelection = 8;
 
@@ -308,8 +318,8 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
       spacing: 5,
       runSpacing: 5,
       wheelDiameter: 155,
-      buttonText2: "બંધ",
-      buttonText1: "ઉમેરો",
+      buttonText2: "close",
+      buttonText1: "Add",
       heading: Text(
         'Select color',
         style: TextStyle(
@@ -345,14 +355,27 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
         ColorPickerType.wheel: true,
       },
       customColorSwatchesAndNames: colorsNameMap,
+      listofColors: listofColors,
+      onClosePopup: (val){
+        Navigator.pop(context);
+        setState(() {
+
+        });
+      },
       onColorAdd: (Color value) {
         if (limitofColorSelection != listofColors.length) {
+
+          print("i was dreaming:: ${value.value}");
+          print("i was dreaming:: ${value.hex}");
+
           setState(() {
-            listofColors.add(value);
+            listofColors.add(_getColorFromHex(value.hex)!);
           });
+
+          Navigator.pop(context);
+          colorPickerDialog();
         } else {}
 
-        print("lalalall $value");
       },
     ).showPickerDialog(
       context,
@@ -360,4 +383,7 @@ class _ColorPickerPageState extends State<ColorPickerPage> {
           const BoxConstraints(minHeight: 480, minWidth: 300, maxWidth: 320),
     );
   }
+
+
+
 }
